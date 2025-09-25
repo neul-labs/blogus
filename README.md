@@ -130,7 +130,7 @@ Then navigate to `http://localhost:8000` in your browser.
 
 ## API Keys
 
-Logus uses LiteLLM to support a wide range of AI models. You'll need API keys for the models you want to use:
+Blogus uses LiteLLM to support a wide range of AI models. You'll need API keys for the models you want to use:
 
 - OpenAI API key for GPT models
 - Anthropic API key for Claude models
@@ -151,7 +151,7 @@ We welcome contributions to Blogus! Please see our [CONTRIBUTING.md](CONTRIBUTIN
 
 ## License
 
-Logus is open-source software licensed under the MIT license. See the [LICENSE](LICENSE) file for more details.
+Blogus is open-source software licensed under the MIT license. See the [LICENSE](LICENSE) file for more details.
 
 ## Support
 
@@ -159,7 +159,7 @@ If you encounter any issues or have questions, please file an issue on our [GitH
 
 ## Citation
 
-If you use Logus in your research, please cite it as follows:
+If you use Blogus in your research, please cite it as follows:
 
 ```bibtex
 @article{sarkar2024blogus,

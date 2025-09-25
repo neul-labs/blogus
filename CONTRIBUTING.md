@@ -1,12 +1,12 @@
-# Contributing to Logus
+# Contributing to Blogus
 
-Thank you for your interest in contributing to Logus! We welcome contributions from the community to help improve this tool for everyone.
+Thank you for your interest in contributing to Blogus! We welcome contributions from the community to help improve this tool for everyone.
 
 ## How to Contribute
 
 ### Reporting Bugs
 
-If you find a bug in Logus, please open an issue on our [GitHub issue tracker](https://github.com/terraprompt/logus/issues) with the following information:
+If you find a bug in Blogus, please open an issue on our [GitHub issue tracker](https://github.com/terraprompt/blogus/issues) with the following information:
 
 1. A clear and descriptive title
 2. A detailed description of the problem
@@ -25,7 +25,7 @@ We welcome suggestions for new features or improvements to existing functionalit
 
 ### Code Contributions
 
-To contribute code to Logus, please follow these steps:
+To contribute code to Blogus, please follow these steps:
 
 1. Fork the repository
 2. Create a new branch for your feature or bug fix
@@ -40,8 +40,8 @@ To contribute code to Logus, please follow these steps:
 
 1. Clone your fork of the repository:
    ```bash
-   git clone https://github.com/your-username/logus.git
-   cd logus
+   git clone https://github.com/your-username/blogus.git
+   cd blogus
    ```
 
 2. Create a virtual environment:
@@ -75,7 +75,7 @@ pytest
 To run tests with coverage:
 
 ```bash
-pytest --cov=logus
+pytest --cov=blogus
 ```
 
 ## Documentation
@@ -101,4 +101,4 @@ When submitting a pull request, please:
 
 If you have any questions about contributing, feel free to open an issue or contact the maintainers directly.
 
-Thank you for helping make Logus better!
+Thank you for helping make Blogus better!
