@@ -20,8 +20,16 @@ Blogus provides a complete prompt engineering workflow:
 
 ## Quick Start
 
+### Try Without Installing
+
 ```bash
-pip install blogus
+uvx blogus scan
+```
+
+### Install
+
+```bash
+uv add blogus
 ```
 
 ### Step 1: Extract Prompts
@@ -158,7 +166,11 @@ response = client.chat.completions.create(
 ## Web Interface
 
 ```bash
-pip install blogus[web]
+# Try without installing
+uvx --with blogus[web] blogus-web
+
+# Or install and run
+uv add blogus[web]
 blogus-web
 ```
 

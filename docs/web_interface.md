@@ -5,7 +5,11 @@ Blogus provides a visual interface for prompt management.
 ## Starting the Server
 
 ```bash
-pip install blogus[web]
+# Try without installing
+uvx --with blogus[web] blogus-web
+
+# Or install first
+uv add blogus[web]
 blogus-web
 ```
 

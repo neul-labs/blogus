@@ -2,6 +2,12 @@
 
 Blogus helps you **extract, test, version, and sync** AI prompts across your codebase.
 
+## Quick Try
+
+```bash
+uvx blogus scan
+```
+
 ## The Workflow
 
 ```

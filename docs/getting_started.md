@@ -2,15 +2,27 @@
 
 This guide walks you through setting up Blogus and running your first prompt extraction.
 
+## Try Without Installing
+
+Use `uvx` to run Blogus directly from PyPI:
+
+```bash
+# Scan your project
+uvx blogus scan
+
+# Run any command
+uvx blogus --help
+```
+
 ## Installation
 
 ```bash
-pip install blogus
+uv add blogus
 ```
 
 For web interface:
 ```bash
-pip install blogus[web]
+uv add blogus[web]
 ```
 
 ## API Keys
