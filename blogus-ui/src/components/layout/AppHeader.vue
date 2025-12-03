@@ -1,27 +1,31 @@
 <template>
-  <header class="bg-surface-100-800-token border-b border-surface-300-600-token">
-    <div class="flex items-center justify-between p-4">
-      <!-- Logo and Title -->
+  <header class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <div class="flex items-center justify-between px-6 py-3">
+      <!-- Page Title / Breadcrumb area -->
       <div class="flex items-center space-x-3">
-        <div class="text-2xl font-bold gradient-heading">
-          <RouterLink to="/" class="hover:text-primary-500 transition-colors">
-            Blogus
-          </RouterLink>
-        </div>
-        <span class="text-sm text-surface-500">AI Prompt Engineering Platform</span>
+        <!-- Mobile menu button -->
+        <button
+          class="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700"
+          @click="$emit('toggle-sidebar')"
+        >
+          <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        </button>
+        <span class="text-sm text-gray-500 dark:text-gray-400">AI Prompt Engineering Platform</span>
       </div>
 
-      <!-- Navigation Actions -->
-      <div class="flex items-center space-x-4">
+      <!-- Actions -->
+      <div class="flex items-center space-x-2">
         <!-- Theme Toggle -->
         <button
           @click="toggleTheme"
-          class="btn btn-sm variant-ghost-surface"
+          class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
           title="Toggle theme"
         >
           <svg
             v-if="isDark"
-            class="w-4 h-4"
+            class="w-5 h-5 text-gray-600 dark:text-gray-300"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -33,7 +37,7 @@
           </svg>
           <svg
             v-else
-            class="w-4 h-4"
+            class="w-5 h-5 text-gray-600 dark:text-gray-300"
             fill="currentColor"
             viewBox="0 0 20 20"
           >
@@ -42,8 +46,11 @@
         </button>
 
         <!-- Settings -->
-        <button class="btn btn-sm variant-ghost-surface" title="Settings">
-          <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+        <button
+          class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+          title="Settings"
+        >
+          <svg class="w-5 h-5 text-gray-600 dark:text-gray-300" fill="currentColor" viewBox="0 0 20 20">
             <path
               fill-rule="evenodd"
               d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z"
@@ -59,7 +66,9 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 
-const isDark = ref(true)
+defineEmits(['toggle-sidebar'])
+
+const isDark = ref(false)
 
 const toggleTheme = () => {
   isDark.value = !isDark.value
@@ -71,16 +80,10 @@ onMounted(() => {
   const savedTheme = localStorage.getItem('theme')
   if (savedTheme) {
     isDark.value = savedTheme === 'dark'
-    document.documentElement.classList.toggle('dark', isDark.value)
+  } else {
+    // Check system preference
+    isDark.value = window.matchMedia('(prefers-color-scheme: dark)').matches
   }
+  document.documentElement.classList.toggle('dark', isDark.value)
 })
 </script>
-
-<style scoped>
-.gradient-heading {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-</style>

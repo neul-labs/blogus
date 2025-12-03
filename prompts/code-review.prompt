@@ -1,0 +1,45 @@
+---
+name: code-review
+description: Review code for quality, bugs, and best practices
+author: blogus
+category: development
+tags:
+  - code
+  - review
+  - quality
+model:
+  id: gpt-4o
+  temperature: 0.3
+  max_tokens: 2000
+goal: Provide thorough, actionable code reviews
+variables:
+  - name: language
+    description: Programming language of the code
+    required: true
+  - name: code
+    description: The code to review
+    required: true
+  - name: focus_areas
+    description: Specific areas to focus on
+    required: false
+    default: "bugs, performance, readability"
+---
+
+You are an expert code reviewer. Review the following {{language}} code and provide actionable feedback.
+
+## Code to Review
+```{{language}}
+{{code}}
+```
+
+## Focus Areas
+{{focus_areas}}
+
+## Review Guidelines
+1. **Bugs & Errors**: Identify any bugs, logic errors, or potential runtime issues
+2. **Performance**: Note any performance concerns or optimization opportunities
+3. **Readability**: Assess code clarity, naming conventions, and documentation
+4. **Best Practices**: Check adherence to {{language}} best practices and idioms
+5. **Security**: Flag any security vulnerabilities or concerns
+
+Provide your review in a structured format with specific line references where applicable.

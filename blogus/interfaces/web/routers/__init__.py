@@ -2,6 +2,6 @@
 Web routers package.
 """
 
-from . import prompts, templates
+from . import prompts, registry, prompt_files
 
-__all__ = ["prompts", "templates"]
+__all__ = ["prompts", "registry", "prompt_files"]

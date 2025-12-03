@@ -7,7 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 import uvicorn
 
-from .routers import prompts, templates
+from .routers import prompts, registry, prompt_files
 from .container import get_container
 from ...shared.exceptions import BlogusError, ValidationError, ResourceNotFoundError
 from ...shared.logging import setup_logging, get_logger
@@ -18,21 +18,30 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Blogus API",
         description="API for crafting, analyzing, and perfecting AI prompts",
-        version="1.0.0"
+        version="2.0.0",
+        docs_url="/api/docs",
+        redoc_url="/api/redoc",
+        openapi_url="/api/openapi.json"
     )
 
-    # Setup CORS
+    # Setup CORS for Vue.js frontend
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Configure appropriately for production
+        allow_origins=[
+            "http://localhost:5173",  # Vite dev server
+            "http://localhost:3000",
+            "http://127.0.0.1:5173",
+            "http://127.0.0.1:3000",
+        ],
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
     )
 
-    # Include routers
+    # Include API routers (unified prompts router handles both prompts and templates)
     app.include_router(prompts.router, prefix="/api/v1")
-    app.include_router(templates.router, prefix="/api/v1")
+    app.include_router(registry.router, prefix="/api/v1")
+    app.include_router(prompt_files.router, prefix="/api/v1")  # File-based prompts
 
     return app
 
@@ -70,7 +79,7 @@ async def blogus_error_handler(request, exc: BlogusError):
 @app.get("/")
 async def root():
     """Root endpoint."""
-    return {"message": "Blogus API", "version": "1.0.0"}
+    return {"message": "Blogus API", "version": "1.0.0", "docs": "/api/docs"}
 
 
 @app.get("/health")

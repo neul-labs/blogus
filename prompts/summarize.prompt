@@ -1,0 +1,39 @@
+---
+name: summarize
+description: Summarize text content concisely
+author: blogus
+category: writing
+tags:
+  - summary
+  - content
+  - text
+model:
+  id: gpt-4o-mini
+  temperature: 0.5
+  max_tokens: 500
+goal: Create clear, accurate summaries
+variables:
+  - name: content
+    description: The content to summarize
+    required: true
+  - name: length
+    description: Desired summary length
+    required: false
+    default: "2-3 paragraphs"
+    enum:
+      - "1 sentence"
+      - "1 paragraph"
+      - "2-3 paragraphs"
+      - "bullet points"
+---
+
+Summarize the following content in {{length}}.
+
+## Content
+{{content}}
+
+## Guidelines
+- Capture the main ideas and key points
+- Maintain accuracy - don't add information not present
+- Use clear, concise language
+- Preserve the original tone when appropriate

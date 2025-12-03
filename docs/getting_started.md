@@ -1,104 +1,134 @@
-# Getting Started with Blogus
+# Getting Started
 
-This guide will help you install and set up Blogus for prompt engineering.
+This guide walks you through setting up Blogus and running your first prompt extraction.
 
 ## Installation
-
-### Basic Installation
-
-To install Blogus with basic functionality:
 
 ```bash
 pip install blogus
 ```
 
-### Web Interface Installation
-
-To install Blogus with web interface support:
-
+For web interface:
 ```bash
 pip install blogus[web]
 ```
 
-### Development Installation
+## API Keys
 
-To install Blogus for development:
-
-```bash
-git clone https://github.com/terraprompt/blogus.git
-cd blogus
-pip install -e .
-```
-
-For web interface development:
+Set environment variables for the LLM providers you use:
 
 ```bash
-pip install -e .[web]
+export OPENAI_API_KEY=your_key
+export ANTHROPIC_API_KEY=your_key
 ```
 
-## API Keys Setup
+## Your First Extraction
 
-Logus uses LiteLLM to support a wide range of AI models. You'll need API keys for the models you want to use:
+### 1. Scan Your Project
 
-### Required Environment Variables
-
-Set these as environment variables:
+Navigate to your project and run:
 
 ```bash
-export OPENAI_API_KEY=your_openai_api_key
-export ANTHROPIC_API_KEY=your_anthropic_api_key
-export GROQ_API_KEY=your_groq_api_key
+blogus scan
 ```
 
-### Supported Providers
+Blogus finds all LLM API calls in Python and JavaScript files:
 
-Logus supports models from:
-- OpenAI (GPT models)
-- Anthropic (Claude models)
-- Groq (Mixtral, Llama models)
-- And many more through LiteLLM
+```
+Scanning project...
 
-For other models supported by LiteLLM, please refer to the [LiteLLM documentation](https://docs.litellm.ai/docs/) for the required environment variables.
+Found 3 LLM API calls:
 
-## Quick Start Examples
+  src/chat.py:15         OpenAI      "You are a helpful..."
+  src/summarize.py:42    OpenAI      "Summarize this text..."
+  lib/translate.js:28    Anthropic   "Translate from..."
 
-### Command Line Interface
+Run 'blogus init' to create prompt files.
+```
 
-Analyze a prompt:
+### 2. Initialize Prompt Files
 
 ```bash
-blogus analyze "You are an AI assistant that helps people find information."
+blogus init
 ```
 
-Generate a test case:
+This creates a `prompts/` directory with sample files. Now create `.prompt` files for your discovered prompts:
+
+```yaml
+# prompts/summarize.prompt
+---
+name: summarize
+description: Summarize text concisely
+model:
+  id: gpt-4o
+  temperature: 0.3
+variables:
+  - name: text
+    required: true
+---
+
+Summarize the following text in 2-3 sentences:
+
+{{text}}
+```
+
+### 3. Test Your Prompt
 
 ```bash
-blogus test "You are an AI assistant that helps people find information."
+# Analyze effectiveness
+blogus analyze prompts/summarize.prompt
+
+# Generate test cases
+blogus test prompts/summarize.prompt
+
+# Execute with a variable
+blogus exec summarize --var text="Your long text here..."
 ```
 
-Execute a prompt:
+### 4. Lock Versions
 
 ```bash
-blogus execute "Explain quantum computing in simple terms."
+blogus lock
 ```
 
-### Library Usage
+This generates `prompts.lock` with content hashes for each prompt.
+
+### 5. Link Code to Prompts
+
+Update your code to use the versioned prompt:
 
 ```python
-from blogus.core import TargetLLMModel, JudgeLLMModel, analyze_prompt, execute_prompt
+from blogus import load_prompt
 
-# Analyze a prompt
-prompt = "You are a helpful assistant."
-analysis = analyze_prompt(prompt, JudgeLLMModel.GPT_4)
-print(f"Goal alignment: {analysis.overall_goal_alignment}/10")
-
-# Execute a prompt
-response = execute_prompt(prompt, TargetLLMModel.GPT_3_5_TURBO)
-print(f"Response: {response}")
+# @blogus:summarize
+response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[{"role": "user", "content": load_prompt("summarize", text=text)}]
+)
 ```
+
+### 6. Keep Code in Sync
+
+When you improve a `.prompt` file, sync changes:
+
+```bash
+blogus fix --dry-run  # Preview
+blogus fix            # Apply
+```
+
+## Verify in CI
+
+Add to your CI pipeline:
+
+```bash
+blogus verify || exit 1
+```
+
+This fails the build if prompts have changed without updating the lock file.
 
 ## Next Steps
 
-- Learn about [Core Concepts](core_concepts.md)
-- Explore the [Prompt Development Lifecycle](prompt_lifecycle.md)
-- Check out the [Command Line Interface](cli.md) documentation
+- [Core Concepts](core_concepts.md) - Understand extraction, versioning, syncing
+- [Prompt Files](prompt_files.md) - Full `.prompt` format reference
+- [CLI Reference](cli.md) - All commands
+- [Web Interface](web_interface.md) - Visual prompt management

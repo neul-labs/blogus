@@ -97,6 +97,41 @@ class LoggingSettings:
 
 
 @dataclass
+class DatabaseSettings:
+    """Database configuration settings."""
+    backend: str = "file"  # "file" or "database"
+    url: str = "sqlite://./data/blogus.db"
+    pool_size: int = 5
+    echo: bool = False
+
+    def __post_init__(self):
+        """Load database URL from environment."""
+        env_url = os.getenv('DATABASE_URL')
+        if env_url:
+            self.url = env_url
+            self.backend = "database"
+
+
+@dataclass
+class ObservabilitySettings:
+    """Observability configuration settings."""
+    tracing_enabled: bool = True
+    service_name: str = "blogus"
+    service_version: str = "0.2.0"
+    environment: str = "development"
+    otlp_endpoint: Optional[str] = None
+    console_export: bool = False
+
+    def __post_init__(self):
+        """Load settings from environment."""
+        self.tracing_enabled = os.getenv('OTEL_ENABLED', 'true').lower() == 'true'
+        self.service_name = os.getenv('OTEL_SERVICE_NAME', self.service_name)
+        self.environment = os.getenv('OTEL_ENVIRONMENT', self.environment)
+        self.otlp_endpoint = os.getenv('OTEL_EXPORTER_OTLP_ENDPOINT')
+        self.console_export = os.getenv('OTEL_CONSOLE_EXPORT', '').lower() == 'true'
+
+
+@dataclass
 class Settings:
     """Main application settings."""
     llm: LLMSettings
@@ -104,6 +139,8 @@ class Settings:
     security: SecuritySettings
     web: WebSettings
     logging: LoggingSettings
+    database: DatabaseSettings
+    observability: ObservabilitySettings
 
     @classmethod
     def load_from_file(cls, config_path: Optional[Path] = None) -> 'Settings':
@@ -134,7 +171,9 @@ class Settings:
             storage=StorageSettings(),
             security=SecuritySettings(),
             web=WebSettings(),
-            logging=LoggingSettings()
+            logging=LoggingSettings(),
+            database=DatabaseSettings(),
+            observability=ObservabilitySettings()
         )
 
     @classmethod
@@ -162,7 +201,9 @@ class Settings:
             storage=StorageSettings(**data.get('storage', {})),
             security=SecuritySettings(**data.get('security', {})),
             web=WebSettings(**data.get('web', {})),
-            logging=LoggingSettings(**data.get('logging', {}))
+            logging=LoggingSettings(**data.get('logging', {})),
+            database=DatabaseSettings(**data.get('database', {})),
+            observability=ObservabilitySettings(**data.get('observability', {}))
         )
 
     def to_dict(self) -> Dict[str, Any]:
@@ -200,6 +241,20 @@ class Settings:
                 'file_path': self.logging.file_path,
                 'max_file_size_mb': self.logging.max_file_size_mb,
                 'backup_count': self.logging.backup_count
+            },
+            'database': {
+                'backend': self.database.backend,
+                'url': self.database.url,
+                'pool_size': self.database.pool_size,
+                'echo': self.database.echo
+            },
+            'observability': {
+                'tracing_enabled': self.observability.tracing_enabled,
+                'service_name': self.observability.service_name,
+                'service_version': self.observability.service_version,
+                'environment': self.observability.environment,
+                'otlp_endpoint': self.observability.otlp_endpoint,
+                'console_export': self.observability.console_export
             }
         }
 

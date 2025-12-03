@@ -2,7 +2,7 @@
 FastAPI router for prompt operations.
 """
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 
@@ -19,31 +19,95 @@ from ....shared.exceptions import BlogusError, ValidationError, ResourceNotFound
 router = APIRouter(prefix="/prompts", tags=["prompts"])
 
 
-# Pydantic models for API
+# =============================================================================
+# Request Models
+# =============================================================================
+
+class CreatePromptRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    content: str = Field(..., min_length=1, max_length=100000)
+    description: str = Field("", max_length=500)
+    goal: Optional[str] = Field(None, max_length=1000)
+    category: str = Field("general", max_length=50)
+    tags: Optional[List[str]] = Field(None)
+    author: str = Field("unknown", max_length=100)
+
+
+class UpdatePromptRequest(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=100)
+    content: Optional[str] = Field(None, min_length=1, max_length=100000)
+    description: Optional[str] = Field(None, max_length=500)
+    goal: Optional[str] = Field(None, max_length=1000)
+    category: Optional[str] = Field(None, max_length=50)
+    tags: Optional[List[str]] = Field(None)
+    author: Optional[str] = Field(None, max_length=100)
+
+
 class AnalyzePromptRequestModel(BaseModel):
-    prompt_text: str = Field(..., min_length=1, max_length=100000)
+    prompt_text: Optional[str] = Field(None, max_length=100000)
+    prompt_id: Optional[str] = Field(None)
     judge_model: str = Field(...)
     goal: Optional[str] = Field(None, max_length=1000)
 
 
 class ExecutePromptRequestModel(BaseModel):
-    prompt_text: str = Field(..., min_length=1, max_length=100000)
+    prompt_text: Optional[str] = Field(None, max_length=100000)
+    prompt_id: Optional[str] = Field(None)
     target_model: str = Field(...)
+    variables: Optional[Dict[str, str]] = Field(None)
 
 
 class GenerateTestRequestModel(BaseModel):
-    prompt_text: str = Field(..., min_length=1, max_length=100000)
+    prompt_text: Optional[str] = Field(None, max_length=100000)
+    prompt_id: Optional[str] = Field(None)
     judge_model: str = Field(...)
     goal: Optional[str] = Field(None, max_length=1000)
 
 
-class CreatePromptRequestModel(BaseModel):
-    text: str = Field(..., min_length=1, max_length=100000)
+class MultiModelExecuteRequest(BaseModel):
+    prompt_text: Optional[str] = Field(None, max_length=100000)
+    prompt_id: Optional[str] = Field(None)
+    models: List[str] = Field(..., min_length=1, max_length=10)
+    variables: Optional[Dict[str, str]] = Field(None)
+
+
+class MultiModelCompareRequest(BaseModel):
+    prompt_text: Optional[str] = Field(None, max_length=100000)
+    prompt_id: Optional[str] = Field(None)
+    models: List[str] = Field(..., min_length=1, max_length=10)
     goal: Optional[str] = Field(None, max_length=1000)
+    reference_output: Optional[str] = Field(None, max_length=100000)
+    variables: Optional[Dict[str, str]] = Field(None)
+    include_llm_assessment: bool = Field(True)
 
 
-# Response models
-class AnalysisResponseModel(BaseModel):
+# =============================================================================
+# Response Models
+# =============================================================================
+
+class PromptResponse(BaseModel):
+    id: str
+    name: str
+    description: str
+    content: str
+    goal: Optional[str] = None
+    category: str
+    tags: List[str]
+    author: str
+    version: int
+    variables: List[str]
+    is_template: bool
+    usage_count: int
+    created_at: str
+    updated_at: str
+
+
+class PromptListResponse(BaseModel):
+    prompts: List[PromptResponse]
+    total: int
+
+
+class AnalysisResponse(BaseModel):
     prompt_id: str
     goal_alignment: int
     effectiveness: int
@@ -52,63 +116,228 @@ class AnalysisResponseModel(BaseModel):
     inferred_goal: Optional[str] = None
 
 
-class FragmentResponseModel(BaseModel):
+class FragmentResponse(BaseModel):
     text: str
     fragment_type: str
     goal_alignment: int
     improvement_suggestion: str
 
 
-class AnalyzePromptResponseModel(BaseModel):
-    analysis: AnalysisResponseModel
-    fragments: List[FragmentResponseModel]
+class AnalyzePromptResponse(BaseModel):
+    analysis: AnalysisResponse
+    fragments: List[FragmentResponse]
 
 
-class ExecutePromptResponseModel(BaseModel):
+class ExecutePromptResponse(BaseModel):
     result: str
     model_used: str
     duration: float
+    prompt_id: Optional[str] = None
 
 
-class TestCaseResponseModel(BaseModel):
+class TestCaseResponse(BaseModel):
     input_variables: dict
     expected_output: str
     goal_relevance: int
 
 
-class GenerateTestResponseModel(BaseModel):
-    test_case: TestCaseResponseModel
+class GenerateTestResponse(BaseModel):
+    test_case: TestCaseResponse
+    prompt_id: Optional[str] = None
 
 
-class PromptResponseModel(BaseModel):
-    id: str
-    text: str
-    goal: Optional[str] = None
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+# =============================================================================
+# Helper Functions
+# =============================================================================
+
+def prompt_to_response(prompt) -> PromptResponse:
+    """Convert domain Prompt to API response."""
+    return PromptResponse(
+        id=prompt.id.value,
+        name=prompt.name,
+        description=prompt.description,
+        content=prompt.content,
+        goal=prompt.goal,
+        category=prompt.category,
+        tags=list(prompt.tags),
+        author=prompt.author,
+        version=prompt.version,
+        variables=prompt.variables,
+        is_template=prompt.is_template,
+        usage_count=prompt.usage_count,
+        created_at=prompt.created_at.isoformat(),
+        updated_at=prompt.updated_at.isoformat()
+    )
 
 
-@router.post("/analyze", response_model=AnalyzePromptResponseModel)
+async def get_prompt_text(
+    container: WebContainer,
+    prompt_text: Optional[str],
+    prompt_id: Optional[str]
+) -> tuple[str, Optional[str], Optional[str]]:
+    """Get prompt text from either direct text or prompt_id. Returns (text, goal, prompt_id)."""
+    if prompt_id:
+        prompt_dto = await container.get_prompt_service().get_prompt(prompt_id)
+        if not prompt_dto:
+            raise HTTPException(status_code=404, detail=f"Prompt {prompt_id} not found")
+        return prompt_dto.text, prompt_dto.goal, prompt_id
+    elif prompt_text:
+        return prompt_text, None, None
+    else:
+        raise HTTPException(status_code=400, detail="Either prompt_text or prompt_id is required")
+
+
+# =============================================================================
+# CRUD Endpoints
+# =============================================================================
+
+@router.post("/", response_model=PromptResponse)
+async def create_prompt(
+    request: CreatePromptRequest,
+    container: WebContainer = Depends(get_container)
+):
+    """Create a new prompt."""
+    try:
+        prompt = await container.get_prompt_service().create_prompt(
+            name=request.name,
+            content=request.content,
+            description=request.description,
+            goal=request.goal,
+            category=request.category,
+            tags=request.tags,
+            author=request.author
+        )
+        # Get the full prompt object
+        from ....domain.models.prompt import PromptId
+        full_prompt = await container.get_prompt_service()._repository.find_by_id(PromptId(prompt.id))
+        return prompt_to_response(full_prompt)
+
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except BlogusError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/", response_model=PromptListResponse)
+async def list_prompts(
+    category: Optional[str] = None,
+    has_variables: Optional[bool] = None,
+    limit: int = 100,
+    offset: int = 0,
+    container: WebContainer = Depends(get_container)
+):
+    """List all prompts with optional filtering."""
+    try:
+        from ....domain.models.prompt import PromptId
+        prompts = await container.get_prompt_service()._repository.find_all(
+            category=category,
+            has_variables=has_variables,
+            limit=limit,
+            offset=offset
+        )
+        return PromptListResponse(
+            prompts=[prompt_to_response(p) for p in prompts],
+            total=len(prompts)
+        )
+    except BlogusError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{prompt_id}", response_model=PromptResponse)
+async def get_prompt(
+    prompt_id: str,
+    container: WebContainer = Depends(get_container)
+):
+    """Get a prompt by ID."""
+    try:
+        from ....domain.models.prompt import PromptId
+        prompt = await container.get_prompt_service()._repository.find_by_id(PromptId(prompt_id))
+        if not prompt:
+            raise HTTPException(status_code=404, detail=f"Prompt {prompt_id} not found")
+        return prompt_to_response(prompt)
+    except BlogusError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.put("/{prompt_id}", response_model=PromptResponse)
+async def update_prompt(
+    prompt_id: str,
+    request: UpdatePromptRequest,
+    container: WebContainer = Depends(get_container)
+):
+    """Update a prompt. Updates content will increment version."""
+    try:
+        from ....domain.models.prompt import PromptId
+        prompt = await container.get_prompt_service()._repository.find_by_id(PromptId(prompt_id))
+        if not prompt:
+            raise HTTPException(status_code=404, detail=f"Prompt {prompt_id} not found")
+
+        # Update content if provided (increments version)
+        if request.content is not None:
+            prompt.update_content(request.content)
+
+        # Update metadata
+        prompt.update_metadata(
+            name=request.name,
+            description=request.description,
+            goal=request.goal,
+            category=request.category,
+            tags=set(request.tags) if request.tags is not None else None,
+            author=request.author
+        )
+
+        # Save changes
+        await container.get_prompt_service()._repository.save(prompt)
+        return prompt_to_response(prompt)
+
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except BlogusError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.delete("/{prompt_id}")
+async def delete_prompt(
+    prompt_id: str,
+    container: WebContainer = Depends(get_container)
+):
+    """Delete a prompt."""
+    try:
+        from ....domain.models.prompt import PromptId
+        deleted = await container.get_prompt_service()._repository.delete(PromptId(prompt_id))
+        if not deleted:
+            raise HTTPException(status_code=404, detail=f"Prompt {prompt_id} not found")
+        return {"message": f"Prompt {prompt_id} deleted"}
+    except BlogusError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# =============================================================================
+# Analysis & Testing Endpoints
+# =============================================================================
+
+@router.post("/analyze", response_model=AnalyzePromptResponse)
 async def analyze_prompt(
     request: AnalyzePromptRequestModel,
     container: WebContainer = Depends(get_container)
 ):
     """Analyze a prompt for effectiveness and goal alignment."""
     try:
-        # Convert to application DTO
-        app_request = AnalyzePromptRequest(
-            prompt_text=request.prompt_text,
-            judge_model=request.judge_model,
-            goal=request.goal
+        prompt_text, stored_goal, pid = await get_prompt_text(
+            container, request.prompt_text, request.prompt_id
         )
+        goal = request.goal or stored_goal
 
-        # Call application service
+        app_request = AnalyzePromptRequest(
+            prompt_text=prompt_text,
+            judge_model=request.judge_model,
+            goal=goal
+        )
         response = await container.get_prompt_service().analyze_prompt(app_request)
 
-        # Convert to API response
-        return AnalyzePromptResponseModel(
-            analysis=AnalysisResponseModel(
-                prompt_id=response.analysis.prompt_id,
+        return AnalyzePromptResponse(
+            analysis=AnalysisResponse(
+                prompt_id=pid or response.analysis.prompt_id,
                 goal_alignment=response.analysis.goal_alignment,
                 effectiveness=response.analysis.effectiveness,
                 suggestions=response.analysis.suggestions,
@@ -116,7 +345,7 @@ async def analyze_prompt(
                 inferred_goal=response.analysis.inferred_goal
             ),
             fragments=[
-                FragmentResponseModel(
+                FragmentResponse(
                     text=f.text,
                     fragment_type=f.fragment_type,
                     goal_alignment=f.goal_alignment,
@@ -132,27 +361,37 @@ async def analyze_prompt(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/execute", response_model=ExecutePromptResponseModel)
+@router.post("/execute", response_model=ExecutePromptResponse)
 async def execute_prompt(
     request: ExecutePromptRequestModel,
     container: WebContainer = Depends(get_container)
 ):
     """Execute a prompt with a target LLM."""
     try:
-        # Convert to application DTO
-        app_request = ExecutePromptRequest(
-            prompt_text=request.prompt_text,
-            target_model=request.target_model
+        prompt_text, _, pid = await get_prompt_text(
+            container, request.prompt_text, request.prompt_id
         )
 
-        # Call application service
+        # Render variables if provided
+        if request.variables and pid:
+            from ....domain.models.prompt import PromptId
+            prompt = await container.get_prompt_service()._repository.find_by_id(PromptId(pid))
+            if prompt:
+                prompt_text = prompt.render(request.variables)
+                prompt.increment_usage()
+                await container.get_prompt_service()._repository.save(prompt)
+
+        app_request = ExecutePromptRequest(
+            prompt_text=prompt_text,
+            target_model=request.target_model
+        )
         response = await container.get_prompt_service().execute_prompt(app_request)
 
-        # Convert to API response
-        return ExecutePromptResponseModel(
+        return ExecutePromptResponse(
             result=response.result,
             model_used=response.model_used,
-            duration=response.duration
+            duration=response.duration,
+            prompt_id=pid
         )
 
     except ValidationError as e:
@@ -161,30 +400,32 @@ async def execute_prompt(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/test", response_model=GenerateTestResponseModel)
+@router.post("/test", response_model=GenerateTestResponse)
 async def generate_test(
     request: GenerateTestRequestModel,
     container: WebContainer = Depends(get_container)
 ):
     """Generate a test case for a prompt."""
     try:
-        # Convert to application DTO
-        app_request = GenerateTestRequest(
-            prompt_text=request.prompt_text,
-            judge_model=request.judge_model,
-            goal=request.goal
+        prompt_text, stored_goal, pid = await get_prompt_text(
+            container, request.prompt_text, request.prompt_id
         )
+        goal = request.goal or stored_goal
 
-        # Call application service
+        app_request = GenerateTestRequest(
+            prompt_text=prompt_text,
+            judge_model=request.judge_model,
+            goal=goal
+        )
         response = await container.get_prompt_service().generate_test_case(app_request)
 
-        # Convert to API response
-        return GenerateTestResponseModel(
-            test_case=TestCaseResponseModel(
+        return GenerateTestResponse(
+            test_case=TestCaseResponse(
                 input_variables=response.test_case.input_variables,
                 expected_output=response.test_case.expected_output,
                 goal_relevance=response.test_case.goal_relevance
-            )
+            ),
+            prompt_id=pid
         )
 
     except ValidationError as e:
@@ -193,76 +434,112 @@ async def generate_test(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-@router.post("/", response_model=PromptResponseModel)
-async def create_prompt(
-    request: CreatePromptRequestModel,
+# =============================================================================
+# Multi-Model Execution & Comparison Endpoints
+# =============================================================================
+
+@router.post("/execute/multi")
+async def execute_multi_model(
+    request: MultiModelExecuteRequest,
     container: WebContainer = Depends(get_container)
 ):
-    """Create a new prompt."""
+    """Execute a prompt across multiple LLM models in parallel."""
     try:
-        # Call application service
-        prompt_dto = await container.get_prompt_service().create_prompt(
-            text=request.text,
-            goal=request.goal
+        prompt_text, _, pid = await get_prompt_text(
+            container, request.prompt_text, request.prompt_id
         )
 
-        # Convert to API response
-        return PromptResponseModel(
-            id=prompt_dto.id,
-            text=prompt_dto.text,
-            goal=prompt_dto.goal,
-            created_at=prompt_dto.created_at.isoformat() if prompt_dto.created_at else None,
-            updated_at=prompt_dto.updated_at.isoformat() if prompt_dto.updated_at else None
+        result = await container.get_prompt_service().execute_multi_model(
+            prompt_text=prompt_text,
+            models=request.models,
+            prompt_id=pid,
+            variables=request.variables
         )
+
+        # Increment usage if using saved prompt
+        if pid:
+            from ....domain.models.prompt import PromptId
+            prompt = await container.get_prompt_service()._repository.find_by_id(PromptId(pid))
+            if prompt:
+                prompt.increment_usage()
+                await container.get_prompt_service()._repository.save(prompt)
+
+        return {
+            "prompt_id": pid or result.prompt_id.value,
+            "prompt_text": result.prompt_text,
+            "total_duration_ms": result.total_duration_ms,
+            "executions": [
+                {
+                    "id": e.id.value,
+                    "model": e.model,
+                    "output": e.output,
+                    "latency_ms": e.latency_ms,
+                    "success": e.success,
+                    "error": e.error
+                }
+                for e in result.executions
+            ]
+        }
 
     except ValidationError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except BlogusError as e:
         raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Execution failed: {str(e)}")
 
 
-@router.get("/{prompt_id}", response_model=PromptResponseModel)
-async def get_prompt(
-    prompt_id: str,
+@router.post("/execute/compare")
+async def execute_and_compare(
+    request: MultiModelCompareRequest,
     container: WebContainer = Depends(get_container)
 ):
-    """Get a prompt by ID."""
+    """Execute a prompt across multiple models and compare outputs."""
     try:
-        prompt_dto = await container.get_prompt_service().get_prompt(prompt_id)
+        prompt_text, stored_goal, pid = await get_prompt_text(
+            container, request.prompt_text, request.prompt_id
+        )
+        goal = request.goal or stored_goal
 
-        if not prompt_dto:
-            raise HTTPException(status_code=404, detail=f"Prompt {prompt_id} not found")
-
-        return PromptResponseModel(
-            id=prompt_dto.id,
-            text=prompt_dto.text,
-            goal=prompt_dto.goal,
-            created_at=prompt_dto.created_at.isoformat() if prompt_dto.created_at else None,
-            updated_at=prompt_dto.updated_at.isoformat() if prompt_dto.updated_at else None
+        result = await container.get_prompt_service().execute_and_compare(
+            prompt_text=prompt_text,
+            models=request.models,
+            prompt_id=pid,
+            goal=goal,
+            reference_output=request.reference_output,
+            variables=request.variables,
+            include_llm_assessment=request.include_llm_assessment
         )
 
+        # Increment usage if using saved prompt
+        if pid:
+            from ....domain.models.prompt import PromptId
+            prompt = await container.get_prompt_service()._repository.find_by_id(PromptId(pid))
+            if prompt:
+                prompt.increment_usage()
+                await container.get_prompt_service()._repository.save(prompt)
+
+        # Override prompt_id in result if we have one
+        if pid:
+            result["prompt_id"] = pid
+
+        return result
+
+    except ValidationError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     except BlogusError as e:
         raise HTTPException(status_code=500, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Comparison failed: {str(e)}")
 
 
-@router.get("/", response_model=List[PromptResponseModel])
-async def list_prompts(
+@router.get("/models/available")
+async def get_available_models(
     container: WebContainer = Depends(get_container)
 ):
-    """List all prompts."""
+    """Get list of available LLM models for execution."""
     try:
-        prompts = await container.get_prompt_service().list_prompts()
-
-        return [
-            PromptResponseModel(
-                id=p.id,
-                text=p.text,
-                goal=p.goal,
-                created_at=p.created_at.isoformat() if p.created_at else None,
-                updated_at=p.updated_at.isoformat() if p.updated_at else None
-            )
-            for p in prompts
-        ]
-
+        models = container.get_prompt_service().get_available_models()
+        return {"models": models}
     except BlogusError as e:
         raise HTTPException(status_code=500, detail=str(e))

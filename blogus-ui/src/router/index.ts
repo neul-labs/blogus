@@ -12,6 +12,32 @@ const router = createRouter({
         title: 'Blogus - AI Prompt Engineering'
       }
     },
+    // Deployments (Registry)
+    {
+      path: '/deployments',
+      name: 'deployments',
+      component: () => import('@/views/DeploymentsPage.vue'),
+      meta: {
+        title: 'Deployments - Blogus'
+      }
+    },
+    {
+      path: '/deployments/create',
+      name: 'create-deployment',
+      component: () => import('@/views/CreateDeploymentPage.vue'),
+      meta: {
+        title: 'Create Deployment - Blogus'
+      }
+    },
+    {
+      path: '/deployments/:name',
+      name: 'deployment-detail',
+      component: () => import('@/views/DeploymentDetailPage.vue'),
+      meta: {
+        title: 'Deployment Details - Blogus'
+      }
+    },
+    // Prompts
     {
       path: '/prompts',
       name: 'prompts',
@@ -29,11 +55,19 @@ const router = createRouter({
       }
     },
     {
-      path: '/prompts/execute',
-      name: 'execute',
-      component: () => import('@/views/ExecutePage.vue'),
+      path: '/prompts/studio',
+      name: 'prompt-studio',
+      component: () => import('@/views/PromptStudioPage.vue'),
       meta: {
-        title: 'Execute Prompt - Blogus'
+        title: 'Prompt Studio - Blogus'
+      }
+    },
+    {
+      path: '/prompts/studio/:name',
+      name: 'prompt-studio-edit',
+      component: () => import('@/views/PromptStudioPage.vue'),
+      meta: {
+        title: 'Edit Prompt - Blogus'
       }
     },
     {
@@ -45,29 +79,27 @@ const router = createRouter({
       }
     },
     {
-      path: '/templates',
-      name: 'templates',
-      component: () => import('@/views/TemplatesPage.vue'),
+      path: '/prompts/scan',
+      name: 'scan',
+      component: () => import('@/views/ScanResultsPage.vue'),
       meta: {
-        title: 'Templates - Blogus'
+        title: 'Project Scan - Blogus'
       }
     },
+    // Redirects for old routes
     {
-      path: '/templates/create',
-      name: 'create-template',
-      component: () => import('@/views/CreateTemplatePage.vue'),
-      meta: {
-        title: 'Create Template - Blogus'
-      }
+      path: '/prompts/execute',
+      redirect: '/prompts/studio'
+    },
+    {
+      path: '/templates',
+      redirect: '/prompts'
     },
     {
       path: '/templates/:id',
-      name: 'template-detail',
-      component: () => import('@/views/TemplateDetailPage.vue'),
-      meta: {
-        title: 'Template Details - Blogus'
-      }
+      redirect: '/prompts'
     },
+    // Errors
     {
       path: '/404',
       name: 'not-found',

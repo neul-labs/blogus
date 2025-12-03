@@ -84,7 +84,7 @@ if __name__ == "__main__":
 
 2. **Dependencies**: Install with web extras:
    ```bash
-   poetry install --extras web
+   uv sync --extra web
    ```
 
 ## Key Concepts

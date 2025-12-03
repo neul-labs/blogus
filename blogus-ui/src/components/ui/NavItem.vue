@@ -44,12 +44,15 @@ const isActive = computed(() => {
 // Simple icon mapping - in a real app you'd use a proper icon library
 const iconComponents = {
   home: 'HomeIcon',
+  server: 'ServerIcon',
   'document-text': 'DocumentTextIcon',
   template: 'TemplateIcon',
   'chart-bar': 'ChartBarIcon',
   play: 'PlayIcon',
   beaker: 'BeakerIcon',
-  plus: 'PlusIcon'
+  plus: 'PlusIcon',
+  'plus-circle': 'PlusCircleIcon',
+  sparkles: 'SparklesIcon'
 }
 
 const iconComponent = computed(() => {
@@ -109,6 +112,27 @@ export default {
           <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/>
         </svg>
       `
+    },
+    PlusCircleIcon: {
+      template: `
+        <svg fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd"/>
+        </svg>
+      `
+    },
+    ServerIcon: {
+      template: `
+        <svg fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm14 1a1 1 0 11-2 0 1 1 0 012 0zM2 13a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2zm14 1a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"/>
+        </svg>
+      `
+    },
+    SparklesIcon: {
+      template: `
+        <svg fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd"/>
+        </svg>
+      `
     }
   }
 }
@@ -117,15 +141,15 @@ export default {
 <style scoped>
 .nav-item {
   @apply flex items-center justify-between w-full px-3 py-2 text-sm rounded-lg transition-colors;
-  @apply text-surface-700 dark:text-surface-300;
-  @apply hover:bg-surface-200 dark:hover:bg-surface-700;
-  @apply focus:bg-surface-200 dark:focus:bg-surface-700 focus:outline-none;
+  @apply text-gray-700 dark:text-gray-300;
+  @apply hover:bg-gray-200 dark:hover:bg-gray-700;
+  @apply focus:bg-gray-200 dark:focus:bg-gray-700 focus:outline-none;
 }
 
 .nav-item--active {
-  @apply bg-primary-100 dark:bg-primary-900;
-  @apply text-primary-700 dark:text-primary-300;
-  @apply border-r-2 border-primary-500;
+  @apply bg-blue-100 dark:bg-blue-900;
+  @apply text-blue-700 dark:text-blue-300;
+  @apply border-r-2 border-blue-500;
 }
 
 .nav-item__content {
@@ -142,6 +166,6 @@ export default {
 
 .nav-item__badge {
   @apply inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none;
-  @apply text-white bg-primary-600 rounded-full;
+  @apply text-white bg-blue-600 rounded-full;
 }
 </style>

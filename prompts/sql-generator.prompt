@@ -1,0 +1,47 @@
+---
+name: sql-generator
+description: Generate SQL queries from natural language
+author: blogus
+category: database
+tags:
+  - sql
+  - database
+  - query
+model:
+  id: gpt-4o
+  temperature: 0.2
+  max_tokens: 1000
+goal: Generate correct, efficient SQL queries
+variables:
+  - name: database_type
+    description: Type of database
+    required: true
+    enum:
+      - PostgreSQL
+      - MySQL
+      - SQLite
+      - SQL Server
+  - name: schema
+    description: Database schema description
+    required: true
+  - name: request
+    description: What the query should do
+    required: true
+---
+
+Generate a {{database_type}} SQL query based on the following request.
+
+## Database Schema
+{{schema}}
+
+## Request
+{{request}}
+
+## Requirements
+1. Use proper {{database_type}} syntax
+2. Include appropriate indexes hints if beneficial
+3. Handle NULL values correctly
+4. Use parameterized query placeholders where user input is involved
+5. Add comments explaining complex logic
+
+Return ONLY the SQL query with comments. Do not include explanations outside the query.

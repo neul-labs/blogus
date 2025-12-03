@@ -21,7 +21,7 @@ Please note that this project is released with a [Contributor Code of Conduct](C
 ### Prerequisites
 
 - Python 3.11 or higher
-- Poetry (for dependency management)
+- uv (for dependency management)
 - Git
 
 ### Installation
@@ -32,23 +32,23 @@ git clone https://github.com/your-username/blogus.git
 cd blogus
 
 # Install dependencies
-poetry install
+uv sync
 
 # Activate the virtual environment
-poetry shell
+source .venv/bin/activate
 ```
 
 ### Running Tests
 
 ```bash
 # Run all tests
-poetry run pytest
+uv run pytest
 
 # Run tests with coverage
-poetry run pytest --cov=blogus
+uv run pytest --cov=blogus
 
 # Run specific test files
-poetry run pytest tests/test_core.py
+uv run pytest tests/test_core.py
 ```
 
 ## Project Structure
@@ -75,7 +75,7 @@ blogus/
 │   ├── static/          # Static files (CSS, JS, images)
 │   └── templates/       # Jinja2 templates
 ├── pyproject.toml       # Project configuration
-├── poetry.lock          # Dependency lock file
+├── uv.lock              # Dependency lock file
 ├── README.md            # Project README
 ├── CONTRIBUTING.md      # This file
 └── LICENSE              # License information
@@ -94,13 +94,13 @@ We follow the Python community standards:
 
 ```bash
 # Format code with Black
-poetry run black .
+uv run black .
 
 # Check code style with Flake8
-poetry run flake8
+uv run flake8
 
 # Type checking with MyPy
-poetry run mypy .
+uv run mypy .
 ```
 
 ## Making Changes
@@ -171,16 +171,16 @@ Closes #123
 
 ```bash
 # Run all tests
-poetry run pytest
+uv run pytest
 
 # Run tests in a specific file
-poetry run pytest tests/test_core.py
+uv run pytest tests/test_core.py
 
 # Run tests with a specific marker
-poetry run pytest -m "slow"
+uv run pytest -m "slow"
 
 # Run tests and generate coverage report
-poetry run pytest --cov=logus --cov-report=html
+uv run pytest --cov=logus --cov-report=html
 ```
 
 ## Documentation

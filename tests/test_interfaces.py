@@ -4,9 +4,13 @@ Tests for interface layer.
 
 import pytest
 from fastapi.testclient import TestClient
-from unittest.mock import AsyncMock, patch
+from unittest.mock import MagicMock, AsyncMock, patch
 from blogus.interfaces.web.main import app
-from blogus.application.dto import AnalyzePromptResponse, AnalysisDto, FragmentDto
+from blogus.interfaces.web.container import get_container
+from blogus.application.dto import (
+    AnalyzePromptResponse, AnalysisDto, FragmentDto,
+    ExecutePromptResponse, CreateTemplateResponse, TemplateDto
+)
 
 
 class TestWebAPI:
@@ -15,6 +19,11 @@ class TestWebAPI:
     def setup_method(self):
         """Set up test fixtures."""
         self.client = TestClient(app)
+
+    def teardown_method(self):
+        """Clean up test fixtures."""
+        # Clear any dependency overrides after each test
+        app.dependency_overrides.clear()
 
     def test_root_endpoint(self):
         """Test root endpoint."""
@@ -28,13 +37,11 @@ class TestWebAPI:
         assert response.status_code == 200
         assert response.json() == {"status": "healthy", "service": "blogus-api"}
 
-    @patch('blogus.interfaces.web.container.get_container')
-    def test_analyze_prompt_endpoint(self, mock_get_container):
+    def test_analyze_prompt_endpoint(self):
         """Test analyze prompt endpoint."""
-        # Mock the container and service
-        mock_container = AsyncMock()
-        mock_service = AsyncMock()
-        mock_get_container.return_value = mock_container
+        # Create mock container and service
+        mock_container = MagicMock()
+        mock_service = MagicMock()
         mock_container.get_prompt_service.return_value = mock_service
 
         # Mock the analysis response
@@ -50,7 +57,10 @@ class TestWebAPI:
             analysis=mock_analysis,
             fragments=[]
         )
-        mock_service.analyze_prompt.return_value = mock_response
+        mock_service.analyze_prompt = AsyncMock(return_value=mock_response)
+
+        # Override the dependency
+        app.dependency_overrides[get_container] = lambda: mock_container
 
         # Make the request
         request_data = {
@@ -65,23 +75,23 @@ class TestWebAPI:
         assert data["analysis"]["goal_alignment"] == 8
         assert data["analysis"]["effectiveness"] == 7
 
-    @patch('blogus.interfaces.web.container.get_container')
-    def test_execute_prompt_endpoint(self, mock_get_container):
+    def test_execute_prompt_endpoint(self):
         """Test execute prompt endpoint."""
-        # Mock the container and service
-        mock_container = AsyncMock()
-        mock_service = AsyncMock()
-        mock_get_container.return_value = mock_container
+        # Create mock container and service
+        mock_container = MagicMock()
+        mock_service = MagicMock()
         mock_container.get_prompt_service.return_value = mock_service
 
         # Mock the execution response
-        from blogus.application.dto import ExecutePromptResponse
         mock_response = ExecutePromptResponse(
             result="Test response",
             model_used="gpt-4",
             duration=1.5
         )
-        mock_service.execute_prompt.return_value = mock_response
+        mock_service.execute_prompt = AsyncMock(return_value=mock_response)
+
+        # Override the dependency
+        app.dependency_overrides[get_container] = lambda: mock_container
 
         # Make the request
         request_data = {
@@ -96,17 +106,14 @@ class TestWebAPI:
         assert data["model_used"] == "gpt-4"
         assert data["duration"] == 1.5
 
-    @patch('blogus.interfaces.web.container.get_container')
-    def test_create_template_endpoint(self, mock_get_container):
+    def test_create_template_endpoint(self):
         """Test create template endpoint."""
-        # Mock the container and service
-        mock_container = AsyncMock()
-        mock_service = AsyncMock()
-        mock_get_container.return_value = mock_container
+        # Create mock container and service
+        mock_container = MagicMock()
+        mock_service = MagicMock()
         mock_container.get_template_service.return_value = mock_service
 
         # Mock the template response
-        from blogus.application.dto import CreateTemplateResponse, TemplateDto
         mock_template = TemplateDto(
             id="test-template",
             name="Test Template",
@@ -120,7 +127,10 @@ class TestWebAPI:
             usage_count=0
         )
         mock_response = CreateTemplateResponse(template=mock_template)
-        mock_service.create_template.return_value = mock_response
+        mock_service.create_template = AsyncMock(return_value=mock_response)
+
+        # Override the dependency
+        app.dependency_overrides[get_container] = lambda: mock_container
 
         # Make the request
         request_data = {

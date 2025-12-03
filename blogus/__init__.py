@@ -11,13 +11,33 @@ This package provides tools for:
 - REST API for integration
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "Dipankar Sarkar"
 __email__ = "me@dipankar.name"
 
-# Core domain models
-from .domain.models.prompt import Prompt, PromptText, Goal
-from .domain.models.template import PromptTemplate, TemplateContent
+# Core domain models - unified Prompt entity
+from .domain.models import (
+    # Prompt core
+    Prompt,
+    PromptId,
+    Goal,
+    Score,
+    Fragment,
+    AnalysisResult,
+    AnalysisStatus,
+    # Execution
+    ModelExecution,
+    MultiModelResult,
+    TokenUsage,
+    # Comparison
+    ComparisonResult,
+    SemanticSimilarity,
+    LLMAssessment,
+    # Testing
+    TestCase,
+    TestRun,
+    TestStatus,
+)
 
 # Application DTOs
 from .application.dto import (
@@ -49,12 +69,29 @@ __all__ = [
     "__author__",
     "__email__",
 
-    # Domain models
+    # Domain models - Prompt
     "Prompt",
-    "PromptText",
+    "PromptId",
     "Goal",
-    "PromptTemplate",
-    "TemplateContent",
+    "Score",
+    "Fragment",
+    "AnalysisResult",
+    "AnalysisStatus",
+
+    # Domain models - Execution
+    "ModelExecution",
+    "MultiModelResult",
+    "TokenUsage",
+
+    # Domain models - Comparison
+    "ComparisonResult",
+    "SemanticSimilarity",
+    "LLMAssessment",
+
+    # Domain models - Testing
+    "TestCase",
+    "TestRun",
+    "TestStatus",
 
     # Application DTOs
     "AnalyzePromptRequest",

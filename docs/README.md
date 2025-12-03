@@ -1,36 +1,60 @@
 # Blogus Documentation
 
-Welcome to the Blogus documentation! Blogus is a comprehensive tool for crafting, analyzing, and perfecting AI prompts. This documentation will guide you through all aspects of using Blogus effectively.
+Blogus helps you **extract, test, version, and sync** AI prompts across your codebase.
 
-## Table of Contents
+## The Workflow
 
-1. [Getting Started](getting_started.md) - Installation and basic setup
-2. [Core Concepts](core_concepts.md) - Understanding the fundamentals of Blogus
-3. [Prompt Development Lifecycle](prompt_lifecycle.md) - Complete workflow for prompt engineering
-4. [Command Line Interface](cli.md) - Using Blogus from the command line
-5. [Web Interface](web_interface.md) - Using the web-based interface
-6. [Library Usage](library.md) - Integrating Blogus into your Python applications
-7. [Model Selection](models.md) - Choosing the right models for your tasks
-8. [Advanced Features](advanced.md) - Advanced techniques and workflows
-9. [API Reference](api/) - Detailed API documentation
-10. [Contributing](contributing.md) - How to contribute to Blogus
+```
+EXTRACT → TEST → VERSION → UPDATE
+```
 
-## Quick Links
+1. **Extract**: Scan your codebase to find all LLM API calls
+2. **Test**: Analyze prompts and generate test cases
+3. **Version**: Store in `.prompt` files with lock file
+4. **Update**: Sync improved prompts back to your code
+
+## Documentation
+
+| Guide | Description |
+|-------|-------------|
+| [Getting Started](getting_started.md) | Installation and first scan |
+| [Core Concepts](core_concepts.md) | How extraction, versioning, and syncing work |
+| [Prompt Files](prompt_files.md) | `.prompt` file format reference |
+| [CLI Reference](cli.md) | All commands documented |
+| [Web Interface](web_interface.md) | Using the web UI |
+| [Library Usage](library.md) | Python API for programmatic use |
+
+## Quick Reference
+
+### Extract Prompts
+```bash
+blogus scan              # Find all LLM calls in your code
+blogus init              # Create prompts/ directory
+```
+
+### Test Prompts
+```bash
+blogus analyze <prompt>  # Analyze effectiveness
+blogus test <prompt>     # Generate test cases
+blogus exec <name>       # Execute with variables
+```
+
+### Version Prompts
+```bash
+blogus prompts           # List all .prompt files
+blogus lock              # Generate prompts.lock
+blogus verify            # Verify against lock (for CI)
+```
+
+### Update Code
+```bash
+blogus check             # Find unversioned prompts
+blogus fix --dry-run     # Preview code updates
+blogus fix               # Sync .prompt changes to code
+```
+
+## Links
 
 - [GitHub Repository](https://github.com/terraprompt/blogus)
 - [PyPI Package](https://pypi.org/project/blogus/)
 - [Issue Tracker](https://github.com/terraprompt/blogus/issues)
-
-## Key Features
-
-- **Target vs Judge Models**: Separate models for prompt execution and analysis
-- **Prompt Analysis**: Comprehensive evaluation of prompt effectiveness
-- **Fragment Analysis**: Granular analysis of prompt components
-- **Test Generation**: Automated generation of test cases
-- **Goal Inference**: Automatic determination of prompt goals
-- **Cross-Model Validation**: Test prompts across multiple LLMs
-- **Web Interface**: Interactive web-based prompt engineering environment
-
-## Support
-
-If you encounter any issues or have questions, please file an issue on our [GitHub issue tracker](https://github.com/terraprompt/blogus/issues).
