@@ -1,71 +1,62 @@
 # Blogus
 
-**Extract, test, version, and sync AI prompts across your codebase.**
+**`package.lock` for AI prompts.**
+
+Extract prompts from your codebase, version them like dependencies, and keep everything in sync.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI version](https://badge.fury.io/py/blogus.svg)](https://badge.fury.io/py/blogus)
 
-## The Problem
+## Why Blogus?
 
-Prompts are scattered as string literals throughout your code. They're hard to find, impossible to test systematically, and when you improve one, you have to manually update every place it's used.
+| Approach | Discover | Version | Test | Sync | Lock |
+|----------|:--------:|:-------:|:----:|:----:|:----:|
+| Inline strings | - | - | - | - | - |
+| Manual .txt files | - | Git | - | Manual | - |
+| LangChain Hub | - | Yes | - | Manual | - |
+| PromptLayer / Humanloop | - | Yes | Yes | Manual | - |
+| **Blogus** | **Auto** | **Git** | **Yes** | **Auto** | **Yes** |
 
-## The Solution
-
-Blogus provides a complete prompt engineering workflow:
-
-1. **Extract** - Scan your codebase to discover all LLM API calls and their prompts
-2. **Test** - Analyze prompts for effectiveness, generate test cases, validate across models
-3. **Version** - Store prompts in `.prompt` files with full Git history
-4. **Update** - When you improve a `.prompt` file, sync changes back to your code
+**Blogus is different because it:**
+- **Extracts** prompts from your existing code (no migration required)
+- **Locks** versions with content hashes (like `package.lock`)
+- **Syncs** changes back to your source files automatically
 
 ## Quick Start
 
-### Try Without Installing
-
 ```bash
+# Try it now
 uvx blogus scan
-```
 
-### Install
-
-```bash
+# Install
 uv add blogus
 ```
 
-### Step 1: Extract Prompts
+### 1. Extract
 
-Scan your project to find all LLM API calls:
-
-```bash
-blogus scan
-```
-
-```
-Scanning project...
-
-Found 4 LLM API calls:
-
-  src/summarizer.py:42     OpenAI      "Summarize this text..."
-  src/chat.py:15           OpenAI      "You are a helpful assistant..."
-  src/review.py:88         Anthropic   "Review this code for bugs..."
-  lib/translate.js:28      OpenAI      "Translate from {{source}} to..."
-
-Run 'blogus init' to create prompt files.
-```
-
-### Step 2: Create Prompt Files
+Find all LLM calls in your codebase:
 
 ```bash
-blogus init
+$ blogus scan
+
+Found 3 LLM API calls:
+  src/chat.py:15         OpenAI      unversioned
+  src/summarize.py:42    OpenAI      unversioned
+  lib/translate.js:28    Anthropic   unversioned
 ```
 
-Convert discovered prompts into versioned `.prompt` files:
+### 2. Version
+
+Create `.prompt` files:
+
+```bash
+$ blogus init
+```
 
 ```yaml
 # prompts/summarize.prompt
 ---
 name: summarize
-description: Summarize text concisely
 model:
   id: gpt-4o
   temperature: 0.3
@@ -73,168 +64,110 @@ variables:
   - name: text
     required: true
 ---
-
-Summarize the following text in 2-3 sentences:
-
-{{text}}
+Summarize in 2-3 sentences: {{text}}
 ```
 
-### Step 3: Test Prompts
+### 3. Lock
 
-Analyze effectiveness and generate test cases:
+Generate a lock file:
 
 ```bash
-# Analyze a prompt
-blogus analyze prompts/summarize.prompt
-
-# Generate test cases
-blogus test prompts/summarize.prompt
-
-# Execute with variables
-blogus exec summarize --var text="Long article content here..."
+$ blogus lock
 ```
 
-### Step 4: Version with Lock File
-
-Lock prompt versions for reproducible deployments:
-
-```bash
-blogus lock
-```
-
-Generates `prompts.lock`:
 ```yaml
-version: 1
+# prompts.lock
 prompts:
   summarize:
-    hash: sha256:a1b2c3d4e5f6...
-    commit: 4903f76
-  code-review:
-    hash: sha256:b2c3d4e5f6a7...
+    hash: sha256:a1b2c3d4...
     commit: 4903f76
 ```
 
-Verify in CI:
-```bash
-blogus verify || exit 1
-```
+### 4. Sync
 
-### Step 5: Update Inline Code
-
-When you improve a `.prompt` file, sync changes back to your source code:
+Update your code when prompts change:
 
 ```bash
-# See what would change
-blogus fix --dry-run
-
-# Apply updates
-blogus fix
+$ blogus fix
 ```
 
-Before:
 ```python
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": "Summarize: " + text}]
-)
+# Before
+content = "Summarize: " + text
+
+# After
+# @blogus:summarize sha256:a1b2c3d4
+content = load_prompt("summarize", text=text)
 ```
 
-After:
-```python
-# @blogus:summarize@v2 sha256:a1b2c3d4
-response = client.chat.completions.create(
-    model="gpt-4",
-    messages=[{"role": "user", "content": load_prompt("summarize", text=text)}]
-)
+### 5. Verify (CI)
+
+```bash
+$ blogus verify || exit 1
 ```
 
-## CLI Commands
+## Commands
 
 | Command | Description |
 |---------|-------------|
-| `blogus scan` | Extract all LLM API calls from your codebase |
-| `blogus init` | Create prompts directory and sample files |
-| `blogus prompts` | List all .prompt files with status |
-| `blogus analyze <prompt>` | Analyze prompt effectiveness |
-| `blogus test <prompt>` | Generate test cases for a prompt |
-| `blogus exec <name>` | Execute a prompt with variables |
-| `blogus check` | Find code using unversioned prompts |
-| `blogus fix` | Update inline code when .prompt files change |
-| `blogus lock` | Generate prompts.lock file |
-| `blogus verify` | Verify prompts match lock file (for CI) |
+| `scan` | Find LLM API calls in your code |
+| `init` | Create prompts directory |
+| `prompts` | List all .prompt files |
+| `exec <name>` | Run a prompt with variables |
+| `analyze` | Evaluate prompt effectiveness |
+| `test` | Generate test cases |
+| `lock` | Generate prompts.lock |
+| `verify` | Check lock file (for CI) |
+| `check` | Find unversioned prompts |
+| `fix` | Sync code with .prompt files |
 
-## Web Interface
+## Web UI
 
 ```bash
-# Try without installing
 uvx --with blogus[web] blogus-web
-
-# Or install and run
-uv add blogus[web]
-blogus-web
 ```
 
-Visual interface at `http://localhost:8000`:
-- **Prompt Library** - Browse and edit all .prompt files
-- **Project Scanner** - Visualize extracted prompts from code
-- **Analysis Dashboard** - Test and analyze prompts
-- **Git Integration** - Commit changes directly from UI
+Browse prompts, scan projects, and commit changes at `http://localhost:8000`.
 
-## .prompt File Format
+## .prompt Format
 
 ```yaml
 ---
 name: code-review
-description: Review code for quality and bugs
+description: Review code for bugs
 model:
   id: gpt-4o
   temperature: 0.3
-  max_tokens: 2000
 variables:
-  - name: language
-    description: Programming language
-    required: true
   - name: code
-    description: Code to review
     required: true
-  - name: focus
-    description: Areas to focus on
-    required: false
-    default: "bugs, performance, readability"
+  - name: language
+    default: python
 ---
+Review this {{language}} code for bugs:
 
-Review this {{language}} code:
-
-```{{language}}
 {{code}}
 ```
 
-Focus on: {{focus}}
-
-Provide specific, actionable feedback.
-```
-
-## The Workflow
+## How It Works
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   EXTRACT   │────▶│    TEST     │────▶│   VERSION   │────▶│   UPDATE    │
-│             │     │             │     │             │     │             │
-│ blogus scan │     │ blogus test │     │ blogus lock │     │ blogus fix  │
-│             │     │ blogus      │     │ blogus      │     │             │
-│ Find all    │     │   analyze   │     │   verify    │     │ Sync back   │
-│ LLM calls   │     │             │     │             │     │ to code     │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
+┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐
+│  SCAN    │───▶│  VERSION │───▶│   LOCK   │───▶│   SYNC   │
+│          │    │          │    │          │    │          │
+│ Find LLM │    │ .prompt  │    │ prompts  │    │ Update   │
+│ calls    │    │ files    │    │ .lock    │    │ code     │
+└──────────┘    └──────────┘    └──────────┘    └──────────┘
 ```
 
 ## Documentation
 
-- [Getting Started](docs/getting_started.md) - Installation and setup
-- [Core Concepts](docs/core_concepts.md) - Extract, test, version, update
-- [Prompt Files](docs/prompt_files.md) - .prompt format reference
-- [CLI Reference](docs/cli.md) - All commands
-- [Web Interface](docs/web_interface.md) - Web UI guide
+- [Getting Started](docs/getting_started.md)
+- [Core Concepts](docs/core_concepts.md)
+- [.prompt Format](docs/prompt_files.md)
+- [CLI Reference](docs/cli.md)
+- [Web Interface](docs/web_interface.md)
 
 ## License
 
-MIT - See [LICENSE](LICENSE)
+MIT

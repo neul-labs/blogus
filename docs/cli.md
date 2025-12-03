@@ -1,40 +1,22 @@
 # CLI Reference
 
-Complete reference for all Blogus commands.
-
-## Overview
-
 ```bash
 blogus [command] [options]
 ```
 
-Commands are organized by the workflow: **Extract → Test → Version → Update**.
-
-## Extract Commands
+## Scan
 
 ### scan
 
-Find all LLM API calls in your codebase.
+Find LLM API calls in your codebase.
 
 ```bash
-blogus scan [OPTIONS]
+blogus scan [--path PATH] [--python] [--no-python] [--js] [--no-js]
 ```
 
-Options:
-- `--path PATH` - Project path to scan (default: current directory)
-- `--python/--no-python` - Include Python files (default: yes)
-- `--js/--no-js` - Include JavaScript/TypeScript files (default: yes)
-
-Example:
 ```bash
-blogus scan
-blogus scan --path ./src --python --no-js
-```
-
-Output:
-```
+$ blogus scan
 Found 3 LLM API calls:
-
   src/chat.py:15         OpenAI      versioned    @blogus:chat
   src/summarize.py:42    OpenAI      unversioned
   lib/translate.js:28    Anthropic   unversioned
@@ -42,65 +24,20 @@ Found 3 LLM API calls:
 
 ### init
 
-Create a prompts directory with sample files.
+Create prompts directory.
 
 ```bash
-blogus init [OPTIONS]
+blogus init [--path PATH]
 ```
 
-Options:
-- `--path PATH` - Path to initialize (default: current directory)
+## Version
 
-Example:
-```bash
-blogus init
-```
+### prompts
 
-Creates:
-```
-prompts/
-├── example.prompt
-└── README.md
-```
-
-## Test Commands
-
-### analyze
-
-Analyze a prompt for effectiveness.
+List all .prompt files.
 
 ```bash
-blogus analyze [OPTIONS] PROMPT
-```
-
-Options:
-- `--target-model MODEL` - Model for execution
-- `--judge-model MODEL` - Model for analysis
-- `--goal TEXT` - Explicit goal (inferred if not provided)
-
-Example:
-```bash
-blogus analyze "You are a helpful assistant."
-blogus analyze prompts/summarize.prompt --judge-model gpt-4o
-```
-
-### test
-
-Generate test cases for a prompt.
-
-```bash
-blogus test [OPTIONS] PROMPT
-```
-
-Options:
-- `--target-model MODEL` - Model for execution
-- `--judge-model MODEL` - Model for test generation
-- `--goal TEXT` - Explicit goal
-
-Example:
-```bash
-blogus test prompts/summarize.prompt
-blogus test "Translate {text} to French" --judge-model gpt-4o
+blogus prompts [--path PATH] [--category CAT] [--dirty]
 ```
 
 ### exec
@@ -108,17 +45,27 @@ blogus test "Translate {text} to French" --judge-model gpt-4o
 Execute a .prompt file with variables.
 
 ```bash
-blogus exec [OPTIONS] PROMPT_NAME
+blogus exec NAME [--var KEY=VALUE]... [--model MODEL]
 ```
 
-Options:
-- `--var KEY=VALUE` - Variable substitution (repeatable)
-- `--model MODEL` - Override model from prompt file
-
-Example:
 ```bash
-blogus exec summarize --var text="Long article..."
-blogus exec code-review --var language=python --var code="def foo(): pass"
+$ blogus exec summarize --var text="Long article..."
+```
+
+### analyze
+
+Evaluate prompt effectiveness.
+
+```bash
+blogus analyze PROMPT [--target-model MODEL] [--judge-model MODEL] [--goal TEXT]
+```
+
+### test
+
+Generate test cases.
+
+```bash
+blogus test PROMPT [--target-model MODEL] [--judge-model MODEL] [--goal TEXT]
 ```
 
 ### execute
@@ -126,168 +73,84 @@ blogus exec code-review --var language=python --var code="def foo(): pass"
 Execute a raw prompt string.
 
 ```bash
-blogus execute [OPTIONS] PROMPT
-```
-
-Options:
-- `--target-model MODEL` - Model to use
-
-Example:
-```bash
-blogus execute "Explain quantum computing" --target-model gpt-4o
+blogus execute PROMPT [--target-model MODEL]
 ```
 
 ### goal
 
-Infer the goal of a prompt.
+Infer prompt goal.
 
 ```bash
-blogus goal [OPTIONS] PROMPT
-```
-
-Options:
-- `--judge-model MODEL` - Model for analysis
-
-Example:
-```bash
-blogus goal "You are a Python tutor."
+blogus goal PROMPT [--judge-model MODEL]
 ```
 
 ### fragments
 
-Analyze prompt fragments for goal alignment.
+Analyze prompt fragments.
 
 ```bash
-blogus fragments [OPTIONS] PROMPT
+blogus fragments PROMPT [--target-model MODEL] [--judge-model MODEL] [--goal TEXT]
 ```
 
-Options:
-- `--target-model MODEL` - Model for execution
-- `--judge-model MODEL` - Model for analysis
-- `--goal TEXT` - Explicit goal
-
-Example:
-```bash
-blogus fragments "You are a helpful assistant. Be concise." --judge-model gpt-4o
-```
-
-## Version Commands
-
-### prompts
-
-List all .prompt files in the project.
-
-```bash
-blogus prompts [OPTIONS]
-```
-
-Options:
-- `--path PATH` - Project path
-- `--category TEXT` - Filter by category
-- `--dirty` - Show only modified files
-
-Example:
-```bash
-blogus prompts
-blogus prompts --dirty
-blogus prompts --category development
-```
+## Lock
 
 ### lock
 
-Generate prompts.lock file with content hashes.
+Generate prompts.lock file.
 
 ```bash
-blogus lock [OPTIONS]
-```
-
-Options:
-- `--path PATH` - Project path
-- `--output FILE` - Output file (default: prompts.lock)
-
-Example:
-```bash
-blogus lock
-blogus lock --output .blogus.lock
+blogus lock [--path PATH] [--output FILE]
 ```
 
 ### verify
 
-Verify prompts match their locked versions.
+Check prompts match lock file.
 
 ```bash
-blogus verify [OPTIONS]
+blogus verify [--path PATH] [--lockfile FILE]
 ```
 
-Options:
-- `--path PATH` - Project path
-- `--lockfile FILE` - Path to lock file
-
-Example:
 ```bash
-blogus verify
-blogus verify || exit 1  # In CI
+$ blogus verify || exit 1  # CI usage
 ```
 
 Exit codes:
 - `0` - All prompts match
-- `1` - Mismatch detected or lock file missing
+- `1` - Mismatch or missing lock
 
-## Update Commands
+## Sync
 
 ### check
 
-Find code using unversioned prompts.
+Find unversioned prompts in code.
 
 ```bash
-blogus check [OPTIONS]
-```
-
-Options:
-- `--path PATH` - Project path
-
-Example:
-```bash
-blogus check
+blogus check [--path PATH]
 ```
 
 ### fix
 
-Add version markers and sync code with .prompt files.
+Update code when .prompt files change.
 
 ```bash
-blogus fix [OPTIONS]
+blogus fix [--path PATH] [--dry-run]
 ```
 
-Options:
-- `--path PATH` - Project path
-- `--dry-run` - Show changes without applying
-
-Example:
 ```bash
-blogus fix --dry-run  # Preview
-blogus fix            # Apply
+$ blogus fix --dry-run  # Preview
+$ blogus fix            # Apply
 ```
 
-## Global Options
+## Models
 
-All commands support:
-- `--help` - Show help message
+Supported via LiteLLM:
 
-## Supported Models
+**OpenAI**: `gpt-4o`, `gpt-4-turbo`, `gpt-3.5-turbo`
 
-Blogus supports any model available through LiteLLM:
+**Anthropic**: `claude-3-opus-20240229`, `claude-3-sonnet-20240229`, `claude-3-haiku-20240307`
 
-**OpenAI:**
-- `gpt-4o`, `gpt-4-turbo`, `gpt-3.5-turbo`
+**Groq**: `groq/llama3-70b-8192`, `groq/mixtral-8x7b-32768`
 
-**Anthropic:**
-- `claude-3-opus-20240229`, `claude-3-sonnet-20240229`, `claude-3-haiku-20240307`
-
-**Groq:**
-- `groq/llama3-70b-8192`, `groq/mixtral-8x7b-32768`
-
-Set API keys:
 ```bash
 export OPENAI_API_KEY=...
 export ANTHROPIC_API_KEY=...
