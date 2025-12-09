@@ -1,0 +1,3 @@
+# Ignore cache but keep config
+cache/
+*.log

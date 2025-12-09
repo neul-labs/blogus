@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "prompts": {
+    "sql-generator": {
+      "version": 1,
+      "content_hash": "a5396450c45b34a5",
+      "commit_sha": "e6bb793cbc225688216fa2ce032527d86d6ad6dd",
+      "file": "prompts/sql-generator.prompt"
+    },
+    "code-review": {
+      "version": 1,
+      "content_hash": "b3be6d10cd7dbcd3",
+      "commit_sha": "e6bb793cbc225688216fa2ce032527d86d6ad6dd",
+      "file": "prompts/code-review.prompt"
+    },
+    "summarize": {
+      "version": 1,
+      "content_hash": "e4aefaacf93cd3c2",
+      "commit_sha": "e6bb793cbc225688216fa2ce032527d86d6ad6dd",
+      "file": "prompts/summarize.prompt"
+    }
+  }
+}

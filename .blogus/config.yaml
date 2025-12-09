@@ -1,0 +1,33 @@
+# Blogus Configuration
+# See https://blogus.dev/docs/configuration for more options
+
+# Default model settings
+model:
+  default: gpt-4o
+  judge: gpt-4o
+
+# Prompt settings
+prompts:
+  directory: prompts
+  # Patterns to ignore when scanning
+  ignore:
+    - "**/node_modules/**"
+    - "**/.venv/**"
+    - "**/dist/**"
+
+# Detection settings (for scanning codebases)
+detection:
+  # Patterns for detecting prompts in code
+  patterns:
+    python:
+      - "openai.chat.completions.create"
+      - "anthropic.messages.create"
+      - "litellm.completion"
+    javascript:
+      - "openai.chat.completions.create"
+      - "new Anthropic().messages.create"
+
+# CI/CD settings
+ci:
+  # Fail if unversioned prompts are found
+  strict: false

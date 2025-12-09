@@ -4,14 +4,13 @@ Tests for infrastructure layer.
 
 import pytest
 import tempfile
-import os
+import shutil
 from pathlib import Path
 from unittest.mock import AsyncMock, patch
-from blogus.infrastructure.config.settings import Settings, get_settings
+from blogus.infrastructure.config.settings import Settings
 from blogus.infrastructure.llm.litellm_provider import LiteLLMProvider
-from blogus.infrastructure.storage.file_repositories import FilePromptRepository, FileTemplateRepository
-from blogus.domain.models.prompt import Prompt, PromptText, PromptId, Goal
-from blogus.domain.models.template import PromptTemplate, TemplateContent, TemplateId
+from blogus.infrastructure.storage.file_repositories import FilePromptRepository
+from blogus.domain.models.prompt import Prompt, PromptId, Goal, ModelId
 
 
 class TestSettings:
@@ -43,9 +42,7 @@ class TestLiteLLMProvider:
             mock_response.choices[0].message.content = "Test response"
             mock_completion.return_value = mock_response
 
-            prompt = PromptText("Test prompt")
-            from blogus.domain.models.prompt import ModelId
-            result = await self.provider.generate_response(ModelId("gpt-4"), prompt)
+            result = await self.provider.generate_response(ModelId("gpt-4"), "Test prompt")
 
             assert result == "Test response"
 
@@ -60,16 +57,14 @@ class TestLiteLLMProvider:
 
             mock_completion.side_effect = [Exception("API Error"), mock_response]
 
-            prompt = PromptText("Test prompt")
-            from blogus.domain.models.prompt import ModelId
-            result = await self.provider.generate_response(ModelId("gpt-4"), prompt)
+            result = await self.provider.generate_response(ModelId("gpt-4"), "Test prompt")
 
             assert result == "Test response"
             assert mock_completion.call_count == 2
 
 
-class TestFileRepositories:
-    """Test file-based repositories."""
+class TestFilePromptRepository:
+    """Test file-based prompt repository."""
 
     def setup_method(self):
         """Set up test fixtures."""
@@ -78,97 +73,159 @@ class TestFileRepositories:
 
     def teardown_method(self):
         """Clean up test fixtures."""
-        import shutil
         shutil.rmtree(self.temp_dir)
 
-    def test_file_prompt_repository_save_and_get(self):
+    @pytest.mark.asyncio
+    async def test_save_and_find_prompt(self):
         """Test saving and retrieving prompts."""
         repo = FilePromptRepository(self.storage_path)
 
-        prompt = Prompt(
-            id=PromptId("test-prompt"),
-            text=PromptText("Test prompt content"),
-            goal=Goal("Test goal")
+        prompt = Prompt.create(
+            name="Test Prompt",
+            content="Test prompt content",
+            goal="Test goal"
         )
 
         # Save prompt
-        repo.save(prompt)
+        await repo.save(prompt)
 
         # Verify file exists
-        prompt_file = self.storage_path / "prompts" / "test-prompt.json"
+        prompt_file = self.storage_path / "prompts" / f"{prompt.id.value}.json"
         assert prompt_file.exists()
 
         # Retrieve prompt
-        retrieved = repo.find_by_id(PromptId("test-prompt"))
+        retrieved = await repo.find_by_id(prompt.id)
         assert retrieved is not None
-        assert retrieved.id.value == "test-prompt"
-        assert retrieved.text.content == "Test prompt content"
+        assert retrieved.id.value == prompt.id.value
+        assert retrieved.content == "Test prompt content"
 
-    def test_file_template_repository_save_and_get(self):
-        """Test saving and retrieving templates."""
-        repo = FileTemplateRepository(self.storage_path)
+    @pytest.mark.asyncio
+    async def test_find_all_prompts(self):
+        """Test listing all prompts."""
+        repo = FilePromptRepository(self.storage_path)
 
-        template = PromptTemplate(
-            id=TemplateId("test-template"),
-            name="Test Template",
-            description="A test template",
-            content=TemplateContent("Hello {{name}}"),
-            category="greeting",
-            tags={"test"},
-            author="test-author"
-        )
-
-        # Save template
-        repo.save_template(template)
-
-        # Verify file exists
-        template_file = self.storage_path / "templates" / "test-template.json"
-        assert template_file.exists()
-
-        # Retrieve template
-        retrieved = repo.find_template("test-template")
-        assert retrieved is not None
-        assert retrieved.id.value == "test-template"
-        assert retrieved.name == "Test Template"
-
-    def test_file_template_repository_find_all(self):
-        """Test listing all templates."""
-        repo = FileTemplateRepository(self.storage_path)
-
-        # Create templates in different categories
-        template1 = PromptTemplate(
-            id=TemplateId("greeting-1"),
+        # Create prompts in different categories
+        prompt1 = Prompt.create(
             name="Greeting 1",
-            description="First greeting",
-            content=TemplateContent("Hello {{name}}"),
+            content="Hello {{name}}",
             category="greeting"
         )
-        template2 = PromptTemplate(
-            id=TemplateId("greeting-2"),
+        prompt2 = Prompt.create(
             name="Greeting 2",
-            description="Second greeting",
-            content=TemplateContent("Hi {{name}}"),
+            content="Hi {{name}}",
             category="greeting"
         )
-        template3 = PromptTemplate(
-            id=TemplateId("farewell-1"),
+        prompt3 = Prompt.create(
             name="Farewell 1",
-            description="First farewell",
-            content=TemplateContent("Goodbye {{name}}"),
+            content="Goodbye {{name}}",
             category="farewell"
         )
 
-        repo.save_template(template1)
-        repo.save_template(template2)
-        repo.save_template(template3)
+        await repo.save(prompt1)
+        await repo.save(prompt2)
+        await repo.save(prompt3)
 
-        # Find all templates
-        all_templates = repo.find_all_templates()
-        assert len(all_templates) == 3
+        # Find all prompts
+        all_prompts = await repo.find_all()
+        assert len(all_prompts) == 3
 
-        # Filter by category manually
-        greetings = [t for t in all_templates if t.category == "greeting"]
-        farewells = [t for t in all_templates if t.category == "farewell"]
-
+        # Filter by category
+        greetings = await repo.find_all(category="greeting")
         assert len(greetings) == 2
+
+        farewells = await repo.find_all(category="farewell")
         assert len(farewells) == 1
+
+    @pytest.mark.asyncio
+    async def test_find_prompts_with_variables(self):
+        """Test filtering prompts by whether they have variables."""
+        repo = FilePromptRepository(self.storage_path)
+
+        # Create template prompt (has variables)
+        template_prompt = Prompt.create(
+            name="Template",
+            content="Hello {{name}}"
+        )
+
+        # Create plain prompt (no variables)
+        plain_prompt = Prompt.create(
+            name="Plain",
+            content="Hello world"
+        )
+
+        await repo.save(template_prompt)
+        await repo.save(plain_prompt)
+
+        # Filter by has_variables
+        templates = await repo.find_all(has_variables=True)
+        assert len(templates) == 1
+        assert templates[0].name == "Template"
+
+        plains = await repo.find_all(has_variables=False)
+        assert len(plains) == 1
+        assert plains[0].name == "Plain"
+
+    @pytest.mark.asyncio
+    async def test_delete_prompt(self):
+        """Test deleting a prompt."""
+        repo = FilePromptRepository(self.storage_path)
+
+        prompt = Prompt.create(
+            name="To Delete",
+            content="Delete me"
+        )
+
+        await repo.save(prompt)
+
+        # Verify prompt exists
+        retrieved = await repo.find_by_id(prompt.id)
+        assert retrieved is not None
+
+        # Delete prompt
+        deleted = await repo.delete(prompt.id)
+        assert deleted is True
+
+        # Verify prompt no longer exists
+        retrieved = await repo.find_by_id(prompt.id)
+        assert retrieved is None
+
+    @pytest.mark.asyncio
+    async def test_search_prompts(self):
+        """Test searching prompts."""
+        repo = FilePromptRepository(self.storage_path)
+
+        prompt1 = Prompt.create(
+            name="Code Review",
+            content="Review this code",
+            category="development",
+            tags={"code", "review"}
+        )
+        prompt2 = Prompt.create(
+            name="Code Analysis",
+            content="Analyze this code",
+            category="development",
+            tags={"code", "analysis"}
+        )
+        prompt3 = Prompt.create(
+            name="Write Story",
+            content="Write a story",
+            category="creative",
+            tags={"writing"}
+        )
+
+        await repo.save(prompt1)
+        await repo.save(prompt2)
+        await repo.save(prompt3)
+
+        # Search by query
+        results = await repo.search(query="code")
+        assert len(results) == 2
+
+        # Search by category
+        results = await repo.search(category="development")
+        assert len(results) == 2
+
+        # Search by tags
+        results = await repo.search(tags=["review"])
+        assert len(results) == 1
+        assert results[0].name == "Code Review"
