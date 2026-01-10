@@ -27,6 +27,7 @@ from .commands.scan import (
     scan_command, check_command, fix_command,
     lock_command, verify_command
 )
+from .commands.demo import demo_command
 from ..web.container import get_container
 from ...shared.logging import setup_logging
 from ...application.dto import ExecutePromptRequest, GenerateTestRequest
@@ -223,6 +224,7 @@ cli.add_command(lock_command)          # blogus lock
 cli.add_command(verify_command)        # blogus verify
 cli.add_command(analyze)               # blogus analyze (legacy)
 cli.add_command(registry)              # blogus registry (legacy)
+cli.add_command(demo_command)          # blogus demo (TUI demo)
 
 
 # Create convenient aliases

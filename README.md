@@ -120,6 +120,7 @@ $ blogus verify || exit 1
 | `verify` | Check lock file (for CI) |
 | `check` | Find unversioned prompts |
 | `fix` | Sync code with .prompt files |
+| `demo` | Launch interactive TUI demo |
 
 ## Web UI
 
@@ -128,6 +129,30 @@ uvx --with blogus[web] blogus-web
 ```
 
 Browse prompts, scan projects, and commit changes at `http://localhost:8000`.
+
+## Interactive Demo
+
+Experience Blogus with an interactive terminal demo - perfect for presentations and learning.
+
+```bash
+# Install with TUI support
+uv add blogus[tui]
+
+# Launch the demo
+blogus demo
+```
+
+The demo walks through:
+- **Scan** - Live detection of prompts in a sample project
+- **Analyze** - LLM-powered effectiveness scoring
+- **Compare** - Side-by-side multi-model output
+- **Fix Workflow** - Check/Fix/Lock/Verify in action
+
+Options:
+```bash
+blogus demo --speed slow     # Slower animations for talks
+blogus demo -p ./my-project  # Demo with your own project
+```
 
 ## .prompt Format
 

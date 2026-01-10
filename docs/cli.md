@@ -141,6 +141,52 @@ $ blogus fix --dry-run  # Preview
 $ blogus fix            # Apply
 ```
 
+## Demo
+
+### demo
+
+Launch an interactive TUI demo showcasing Blogus features.
+
+```bash
+blogus demo [--speed SPEED] [--project PATH] [--no-cleanup]
+```
+
+Options:
+- `--speed`, `-s`: Animation speed (`slow`, `normal`, `fast`)
+- `--project`, `-p`: Use an existing project instead of demo project
+- `--no-cleanup`: Don't cleanup demo project on exit
+
+```bash
+$ blogus demo                  # Start with auto-generated demo project
+$ blogus demo --speed slow     # Slow animations for presentations
+$ blogus demo -p ./my-project  # Demo with your own project
+```
+
+**Requires TUI dependencies:**
+```bash
+uv add blogus[tui]
+# or
+pip install blogus[tui]
+```
+
+**Demo Screens:**
+
+| Screen | Description | Key Actions |
+|--------|-------------|-------------|
+| Welcome | ASCII logo and intro | `Enter` start, `Space` dashboard |
+| Scan | Live prompt detection | `n` next, `r` rescan |
+| Analyze | Effectiveness scoring | `a` analyze, `j/k` navigate |
+| Compare | Multi-model comparison | `c` compare |
+| Fix Workflow | Check/Fix/Lock/Verify | `Enter` execute step, `a` run all |
+| Dashboard | Interactive hub | `s` scan, `a` analyze, `c` compare |
+| Summary | Recap and next steps | `r` restart, `q` quit |
+
+**Global Keys:**
+- `n` / `b` - Next / Back
+- `d` - Jump to Dashboard
+- `q` - Quit
+- `?` - Help
+
 ## Models
 
 Supported via LiteLLM:

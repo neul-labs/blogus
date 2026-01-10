@@ -6,6 +6,20 @@
 uvx blogus scan
 ```
 
+## Interactive Demo
+
+The fastest way to understand Blogus is the interactive demo:
+
+```bash
+# Install with TUI support
+uv add blogus[tui]
+
+# Launch the demo
+blogus demo
+```
+
+This walks you through scanning, analysis, multi-model comparison, and the version workflow - all in an interactive terminal interface. Use `--speed slow` for presentations.
+
 ## Install
 
 ```bash
@@ -15,6 +29,11 @@ uv add blogus
 For web interface:
 ```bash
 uv add blogus[web]
+```
+
+For interactive TUI demo:
+```bash
+uv add blogus[tui]
 ```
 
 ## API Keys
@@ -92,3 +111,4 @@ $ blogus verify || exit 1
 - [.prompt Format](prompt_files.md) - File format reference
 - [CLI Reference](cli.md) - All commands
 - [Web Interface](web_interface.md) - Visual management
+- `blogus demo` - Interactive TUI walkthrough
